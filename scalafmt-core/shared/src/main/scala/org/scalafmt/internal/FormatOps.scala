@@ -82,9 +82,7 @@ class FormatOps(val tree: Tree, val initStyle: ScalafmtConfig) {
    * ...
    *
    */
-  val (packageTokens, importTokens, argumentStarts, optionalNewlines) = {
-    val packages = Set.newBuilder[Token]
-    val imports = Set.newBuilder[Token]
+  val (argumentStarts, optionalNewlines) = {
     val arguments = mutable.Map.empty[TokenHash, Tree]
     val optional = mutable.Set.empty[TokenHash]
     def add(tree: Tree): Unit = {
@@ -96,8 +94,6 @@ class FormatOps(val tree: Tree, val initStyle: ScalafmtConfig) {
       tree.tokens.headOption.foreach(x => optional += hash(x))
     def iter(tree: Tree): Unit = {
       tree match {
-        case p: Pkg => packages ++= p.ref.tokens
-        case i: Import => imports ++= i.tokens
         case t: Term => add(t)
         case t: Term.Param =>
           add(t)
@@ -108,7 +104,7 @@ class FormatOps(val tree: Tree, val initStyle: ScalafmtConfig) {
       tree.children.foreach(iter)
     }
     iter(tree)
-    (packages.result(), imports.result(), arguments.toMap, optional)
+    (arguments.toMap, optional)
   }
 
   object `:owner:` {
