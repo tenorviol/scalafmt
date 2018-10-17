@@ -1,20 +1,7 @@
 package org.scalafmt.util
 
 import scala.annotation.tailrec
-import scala.meta.Case
-import scala.meta.Ctor
-import scala.meta.Decl
-import scala.meta.Defn
-import scala.meta.Enumerator
-import scala.meta.Importer
-import scala.meta.Mod
-import scala.meta.Pat
-import scala.meta.Pkg
-import scala.meta.Source
-import scala.meta.Template
-import scala.meta.Term
-import scala.meta.Tree
-import scala.meta.Type
+import scala.meta.{Case, Ctor, Decl, Defn, Enumerator, Import, Importer, Init, Mod, Pat, Pkg, Source, Template, Term, Tree, Type}
 import scala.meta.tokens.Token
 import scala.meta.tokens.Token._
 import scala.meta.tokens.Tokens
@@ -23,7 +10,9 @@ import scala.reflect.classTag
 import org.scalafmt.Error
 import org.scalafmt.Error.UnexpectedTree
 import org.scalafmt.internal.FormatToken
-import scala.meta.Init
+
+import scala.collection.{immutable, mutable}
+import scala.collection.immutable.Nil
 
 /**
   * Stateless helper functions on [[scala.meta.Tree]].
@@ -31,6 +20,54 @@ import scala.meta.Init
 object TreeOps {
   import LoggerOps._
   import TokenOps._
+
+  /**
+    * Retrieve all top-level `package` statements
+    * located at the root of the source tree.
+    *
+    * NOTE: Package blocks,
+    * even as the first line of source,
+    * are not considered top-level packages.
+    *
+    * @return (packages, remaining statement branches after packages)
+    */
+  def topLevelPackages(source: Tree): (List[Pkg], List[Tree]) = {
+    val packages = mutable.ListBuffer[Pkg]()
+    def iter(children: List[Tree]): List[Tree] = {
+      children match {
+        case Source(stats) :: Nil =>
+          iter(stats)
+        case rest @ Pkg(_, Nil) :: _ =>
+          // terminate on package block
+          rest
+        case (p @ Pkg(ref, stats)) :: Nil =>
+          packages += p
+          iter(stats)
+        case rest => rest
+      }
+    }
+    val tail = iter(List(source))
+    (packages.toList, tail)
+  }
+
+  /**
+    * Retrieve several `import` statements located one after the next.
+    *
+    * @return (imports, remaining statement branches after imports)
+    */
+  def importCluster(statements: List[Tree]): (List[Import], List[Tree]) = {
+    val imports = mutable.ListBuffer[Import]()
+    def iter(trees: List[Tree]): List[Tree] = {
+      trees match {
+        case (i @ Import(_)) :: rest =>
+          imports += i
+          iter(rest)
+        case rest => rest
+      }
+    }
+    val tail = iter(statements)
+    (imports.toList, tail)
+  }
 
   @tailrec
   def topTypeWith(typeWith: Type.With): Type.With = typeWith.parent match {
