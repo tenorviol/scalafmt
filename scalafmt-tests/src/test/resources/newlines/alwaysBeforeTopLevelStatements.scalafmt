@@ -2,7 +2,7 @@ maxColumn = 60
 newlines.alwaysBeforeTopLevelStatements = true
 
 <<< Create newline between initial package and import block
-package a.b
+package /* foo */ a.b  // bar
 import c.d
 import e.f
 >>>
@@ -11,7 +11,7 @@ package a.b
 import c.d
 import e.f
 <<< Create newline between package block and import block
-package a.b
+package /* foo */ a.b  // bar
 package c
 import d.e
 import f.g
@@ -24,6 +24,9 @@ import f.g
 <<< Create newline between 3-line package block and import block
 package a.b
 package c
+/**
+  * Some damn fool comment here, get off my lawn!
+  */
 package d
 import e.f
 import g.h
@@ -46,13 +49,11 @@ import c.d
 class Foo
 <<< Create newline between test Y
 package a.b
-import c.d
-class Foo {
+package c {
 }
 >>>
 package a.b
 
-import c.d
-
-class Foo {
+package c {
+    var x = 1
 }
