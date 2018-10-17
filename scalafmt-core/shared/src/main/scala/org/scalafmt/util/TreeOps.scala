@@ -21,6 +21,27 @@ object TreeOps {
   import LoggerOps._
   import TokenOps._
 
+  object TopLevelPackages {
+    def unapply(source: Tree): Option[(List[Pkg], List[Tree])] =  {
+      val packages = mutable.ListBuffer[Pkg]()
+      def iter(children: List[Tree]): List[Tree] = {
+        children match {
+          case Source(stats) :: Nil =>
+            iter(stats)
+          case rest @ Pkg(_, Nil) :: _ =>
+            // terminate on package block
+            rest
+          case (p @ Pkg(ref, stats)) :: Nil =>
+            packages += p
+            iter(stats)
+          case rest => rest
+        }
+      }
+      val tail = iter(List(source))
+      Option((packages.toList, tail))
+    }
+  }
+
   /**
     * Retrieve all top-level `package` statements
     * located at the root of the source tree.

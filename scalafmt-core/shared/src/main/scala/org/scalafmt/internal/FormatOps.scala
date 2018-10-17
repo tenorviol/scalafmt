@@ -72,14 +72,14 @@ class FormatOps(val tree: Tree, val initStyle: ScalafmtConfig) {
   @inline
   def owners(token: Token): Tree = ownersMap(hash(token))
 
-  val (topLevelPackages, firstImport): (List[Pkg], Option[Import]) = {
-    val (packages, tail) = TreeOps.topLevelPackages(tree)
-    val firstImport = tail match {
-      case (i @ Import(_)) :: Nil => Option(i)
-      case _ => None
+  val (topLevelPackages, afterTopLevelPackages): (List[Pkg], Option[Tree]) = {
+    tree match {
+      case TopLevelPackages(packages, tail) => (packages, tail.headOption)
     }
-    (packages, firstImport)
   }
+
+  println(topLevelPackages.map(_.toString().takeWhile(_ != '\n')))
+  println(afterTopLevelPackages)
 
   /*
    * The tokens on the left hand side of Pkg
