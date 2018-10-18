@@ -21,27 +21,6 @@ object TreeOps {
   import LoggerOps._
   import TokenOps._
 
-  object TopLevelPackages {
-    def unapply(source: Tree): Option[(List[Pkg], List[Tree])] =  {
-      val packages = mutable.ListBuffer[Pkg]()
-      def iter(children: List[Tree]): List[Tree] = {
-        children match {
-          case Source(stats) :: Nil =>
-            iter(stats)
-          case rest @ Pkg(_, Nil) :: _ =>
-            // terminate on package block
-            rest
-          case (p @ Pkg(ref, stats)) :: Nil =>
-            packages += p
-            iter(stats)
-          case rest => rest
-        }
-      }
-      val tail = iter(List(source))
-      Option((packages.toList, tail))
-    }
-  }
-
   /**
     * Retrieve all top-level `package` statements
     * located at the root of the source tree.
@@ -52,42 +31,28 @@ object TreeOps {
     *
     * @return (packages, remaining statement branches after packages)
     */
-  def topLevelPackages(source: Tree): (List[Pkg], List[Tree]) = {
-    val packages = mutable.ListBuffer[Pkg]()
-    def iter(children: List[Tree]): List[Tree] = {
-      children match {
-        case Source(stats) :: Nil =>
-          iter(stats)
-        case rest @ Pkg(_, Nil) :: _ =>
-          // terminate on package block
-          rest
-        case (p @ Pkg(ref, stats)) :: Nil =>
-          packages += p
-          iter(stats)
-        case rest => rest
+  object TopLevelPackages {
+    def traverse(source: Tree): (List[Pkg], List[Tree]) = {
+      val packages = mutable.ListBuffer[Pkg]()
+      def walk(children: List[Tree]): List[Tree] = {
+        children match {
+          case Source(stats) :: Nil =>
+            walk(stats)
+          case rest @ Pkg(_, Nil) :: _ =>
+            rest  // terminate on package block
+          case (p @ Pkg(ref, stats)) :: Nil =>
+            packages += p
+            walk(stats)
+          case rest => rest
+        }
       }
+      val tail = walk(List(source))
+      (packages.toList, tail)
     }
-    val tail = iter(List(source))
-    (packages.toList, tail)
-  }
 
-  /**
-    * Retrieve several `import` statements located one after the next.
-    *
-    * @return (imports, remaining statement branches after imports)
-    */
-  def importCluster(statements: List[Tree]): (List[Import], List[Tree]) = {
-    val imports = mutable.ListBuffer[Import]()
-    def iter(trees: List[Tree]): List[Tree] = {
-      trees match {
-        case (i @ Import(_)) :: rest =>
-          imports += i
-          iter(rest)
-        case rest => rest
-      }
+    def unapply(source: Tree): Option[(List[Pkg], List[Tree])] =  {
+      Option(traverse(source))
     }
-    val tail = iter(statements)
-    (imports.toList, tail)
   }
 
   @tailrec

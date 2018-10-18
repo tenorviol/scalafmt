@@ -84,6 +84,14 @@ class Router(formatOps: FormatOps) {
         Seq(
           Split(Newline, 0) // End files with trailing newline
         )
+      case FormatToken(_, right: Pkg, _) if topLevelPackages.get(hash(right)).isDefined =>
+        Seq(
+          Split(Newline, 0)
+        )
+      case FormatToken(_, right, _) if afterTopLevelPackages.exists(_ == right) =>
+        Seq(
+          Split(Newline2x, 0)
+        )
       case FormatToken(start @ Interpolation.Start(), _, _) =>
         val isStripMargin = isMarginizedString(start)
         val end = matchingParentheses(hash(start))

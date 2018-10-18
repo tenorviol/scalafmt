@@ -181,7 +181,7 @@ class FormatWriter(formatOps: FormatOps) {
             " "
           case nl: NewlineT =>
             val newline =
-              if (nl.isDouble || isMultilineTopLevelStatement(locations, i))
+              if (nl.isDouble)
                 "\n\n"
               else "\n"
             val indentation =
